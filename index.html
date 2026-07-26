@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sylvan Library — The Descent</title>
+
+  <!-- 1. Early Connections to Font & CDN Servers -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+
+  <!-- 2. Preload Critical Background & Fog so they load INSTANTLY -->
+  <link rel="preload" href="assets/main_library.webp" as="image">
+  <link rel="preload" href="assets/fog.webp" as="image">
+
+  <!-- 3. Non-blocking Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+
+</head>
+
+<body data-book-id="active-read">
+
+
+
+  <header class="nav-bar">
+    <nav class="nav-container" aria-label="Main Navigation">
+
+      <!-- Brand / Logo -->
+      <a href="index.html" class="nav-brand">
+        <img src="assets/logo.png" alt="Sylvan Library Logo" class="nav-logo" />
+      </a>
+
+      <!-- Mobile Hamburger Toggle -->
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle Navigation Menu">
+        <span class="hamburger-bar"></span>
+        <span class="hamburger-bar"></span>
+        <span class="hamburger-bar"></span>
+      </button>
+
+      <!-- Navigation Menu Wrapper -->
+      <div class="nav-menu" id="navMenu">
+        <ul class="nav-links">
+          <li><a href="index.html" class="active">Home</a></li>
+          <li><a href="archive.html">Archives</a></li>
+          <li><a href="recommendations.html">Recommendations</a></li>
+        </ul>
+
+        <!-- CTA Button targeting your #current-read section -->
+        <a href="index.html#current-read" class="btn-nav-cta">Current Book</a>
+      </div>
+
+    </nav>
+  </header>
+
+  <!-- Update #canvas-container: -->
+  <div id="canvas-container" style="background-image: url('assets/main_library.webp');"></div>
+
+  <!-- Particle & Environmental Overlays -->
+  <div id="particle-canvas"></div>
+  <div id="darkness-overlay"></div>
+  <div id="fog-overlay"></div>
+
+  <!-- Scrollable Content Layer -->
+  <main class="scroll-content">
+
+    <!-- Hero Section -->
+    <section id="sylvan-hero" class="descent-section">
+      <div class="hero-header">
+        <span class="sub-title">Subterranean Vaults</span>
+        <h1 class="hero-main-title">The Sylvan Library</h1>
+
+        <!-- 3 Primary Action Buttons -->
+        <div class="hero-actions">
+          <a href="#current-read" class="btn-primary">📖 See Book</a>
+          <a href="archive.html" class="btn-secondary">📜 See Archive</a>
+          <a href="recommendations.html" class="btn-secondary">✨ Recommend a Book</a>
+        </div>
+
+        <div class="scroll-indicator">↓</div>
+      </div>
+    </section>
+
+    <!-- Section 1: Current Tome -->
+    <section id="current-read" class="descent-section">
+      <div class="tome-card glass-panel">
+        <div class="tome-cover-wrapper">
+          <span class="tome-status badge-moon">🌙 Active Read</span>
+          <img src="assets/books/cover-backup.webp" alt="Current Tome Cover" class="tome-cover" />
+        </div>
+        <div class="tome-details">
+          <span class="tome-genre-tag">Community Choice</span>
+          <h2 class="tome-title">El cuento de la criada</h2>
+          <p class="tome-author">by Margaret Atwood</p>
+
+          <div class="tome-meta">
+            <span id="tome-target">📍 Target: Calculating...</span>
+          </div>
+
+          <!-- Current Book Action Buttons -->
+          <div class="tome-actions">
+            <a href="#reactions" class="btn-primary">✨ React</a>
+            <a href="#milestones" class="btn-secondary">📍 See Milestones</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+   <!-- Section 2: Whispering Vault (Quote Vault & Reactions) -->
+    <section id="reactions" class="book-reactions-section">
+      <h3 class="section-title">Tome Reflections & Annotations</h3>
+
+      <!-- Interactive Vibe Stamps Block -->
+      <div class="reactions-block vibes-block">
+        <h4 class="block-subtitle">🔮 Current Atmosphere</h4>
+        <div class="vibe-stamps">
+          <button class="vibe-btn" data-vibe="cozy">
+            <span>☕ Cozy</span> <span class="vibe-count">(0)</span>
+          </button>
+          <button class="vibe-btn" data-vibe="mindblown">
+            <span>🤯 Mindblown</span> <span class="vibe-count">(0)</span>
+          </button>
+          <button class="vibe-btn" data-vibe="twist">
+            <span>⚡ Mind Twist</span> <span class="vibe-count">(0)</span>
+          </button>
+          <!-- Fixed data-vibe keys below -->
+          <button class="vibe-btn" data-vibe="devastated">
+            <span>😭 Devastated</span> <span class="vibe-count">(0)</span>
+          </button>
+          <button class="vibe-btn" data-vibe="intense">
+            <span>🔥 Intense</span> <span class="vibe-count">(0)</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Favorite Lines / Quotes Display -->
+      <div class="reactions-block">
+        <h4 class="block-subtitle">✨ Favorite Lines</h4>
+        <ul id="favorite-lines-list" class="lines-list">
+          <li>"In the deep roots of the canopy, silence speaks louder than words."</li>
+        </ul>
+      </div>
+
+      <!-- Book Comments Feed -->
+      <div class="reactions-block">
+        <h4 class="block-subtitle">📜 Reader Notes</h4>
+        <div id="comments-list" class="comments-list">
+          <div class="comment-card">
+            <div class="comment-header">
+              <span class="author">Archivist</span>
+              <span class="timestamp">Earlier</span>
+            </div>
+            <p class="comment-body">This text holds fascinating insights on subterranean botany!</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Unified Input Form -->
+      <form id="reaction-form" class="reaction-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="reaction-type">Add to Tome:</label>
+            <select id="reaction-type" class="reaction-select">
+              <option value="line">Favorite Line / Quote</option>
+              <option value="comment">Book Comment</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="reaction-author-role">Inscribed By:</label>
+            <select id="reaction-author-role" class="reaction-select">
+              <option value="Mafer">Mafer</option>
+              <option value="Fer">Fer</option>
+              <option value="Carla">Carla</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="reaction-text">Mark / Annotation:</label>
+          <textarea
+            id="reaction-text"
+            placeholder="Inscribe a favorite quote or share your thoughts on this volume..."
+            required></textarea>
+        </div>
+
+        <button type="submit" class="submit-btn">Leave Mark in Tome</button>
+      </form>
+    </section>
+
+    <!-- Section 3: Spiral Waypoints (Reading Milestones) -->
+    <section id="milestones" class="descent-section">
+      <div class="glass-panel">
+        <span class="badge">Spiral Waypoints</span>
+        <h2>Reading Milestones</h2>
+        <p class="section-desc" style="font-size: 0.85rem; opacity: 0.8; margin-bottom: 1.5rem;">
+          Select a waypoint to synchronize the circle's active reading position.
+        </p>
+
+        <!-- Dynamic milestone cards render here via JS -->
+        <div id="milestones-grid" class="milestones-grid"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer with Archivist Secret Trigger -->
+  <footer class="sylvan-footer">
+    <p>© Sylvan Library — Inscribed by the Circle</p>
+    <button id="archivist-key-btn" class="archivist-key" onclick="openArchivistModal()" title="Archivist Access">🗝️</button>
+  </footer>
+
+  <!-- Archivist Sanctum Modal -->
+  <div id="archivist-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <button id="close-archivist-modal" class="modal-close" onclick="closeArchivistModal()">&times;</button>
+
+      <div class="modal-header">
+        <span class="rune-icon">✦</span>
+        <h2>Archivist Sanctum</h2>
+        <p>Enter the ancient passkey to cycle the Sylvan Season.</p>
+      </div>
+
+      <!-- Passkey Step -->
+      <div id="archivist-auth-step" class="modal-step">
+        <div class="input-group">
+          <label for="archivist-pin">Sanctum Passkey</label>
+          <input type="password" id="archivist-pin" placeholder="Enter PIN " autocomplete="off">
+        </div>
+        <button id="archivist-unlock-btn" class="sylvan-btn" onclick="unlockArchivistControls()">Unlock Controls</button>
+        <p id="archivist-error" class="error-msg hidden">The passkey is invalid.</p>
+      </div>
+
+      <!-- Control Actions Step -->
+      <div id="archivist-actions-step" class="modal-step hidden">
+        <div class="action-box">
+          <h3>Cycle Sylvan Season</h3>
+          <p>This action will permanently move the active tome to the Archives, promote the top-voted recommendation, and reset local annotations for the new month.</p>
+          <button id="cycle-season-btn" class="sylvan-btn primary-btn">✨ Archive & Promote Top Tome</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+
+  <!-- Firebase Core SDK (Compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+
+  <!-- Firestore Database SDK (Compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <script src="books.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

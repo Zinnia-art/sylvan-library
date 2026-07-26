@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sylvan Library — Recommendations</title>
+
+  <!-- 1. Early Connections to Font & CDN Servers -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+
+  <!-- 2. Preload Critical Background & Fog so they load INSTANTLY -->
+  <link rel="preload" href="assets/main_library.webp" as="image">
+  <link rel="preload" href="assets/fog.webp" as="image">
+
+  <!-- 3. Non-blocking Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+
+
+</head>
+<body>
+
+  <header class="nav-bar">
+    <nav class="nav-container" aria-label="Main Navigation">
+
+      <!-- Brand / Logo -->
+      <a href="index.html" class="nav-brand">
+        <img src="assets/logo.png" alt="Sylvan Library Logo" class="nav-logo" />
+      </a>
+
+      <!-- Mobile Hamburger Toggle -->
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle Navigation Menu">
+        <span class="hamburger-bar"></span>
+        <span class="hamburger-bar"></span>
+        <span class="hamburger-bar"></span>
+      </button>
+
+      <!-- Navigation Menu Wrapper -->
+      <div class="nav-menu" id="navMenu">
+        <ul class="nav-links">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="archive.html">Archives</a></li>
+          <li><a href="recommendations.html" class="active">Recommendations</a></li>
+        </ul>
+
+        <!-- CTA Button targeting your #current-read section -->
+        <a href="index.html#current-read" class="btn-nav-cta">Current Book</a>
+      </div>
+
+    </nav>
+  </header>
+
+  <!-- Update #canvas-container: -->
+  <div id="canvas-container" style="background-image: url('assets/library_bottom.webp');"></div>
+
+  <!-- Environmental Lighting, Fog & Firefly Canvas Overlays -->
+  <div id="particle-canvas"></div>
+  <div id="darkness-overlay"></div>
+  <div id="fog-overlay"></div>
+
+  <!-- Main Scrollable Content -->
+  <main class="scroll-content">
+
+    <!-- Header Section -->
+    <section class="page-header descent-section" style="min-height: 38vh; padding-top: 7.5rem;">
+      <div class="hero-header">
+        <span class="sub-title">Future Horizons</span>
+        <h1 class="hero-main-title">Tome Recommendations</h1>
+        <p class="hero-tagline">Future journeys pitched by the circle. Vote on what we should read next!</p>
+      </div>
+    </section>
+
+    <section class="section-container" style="max-width: 1100px; margin: 0 auto; padding: 0 1.5rem 4rem;">
+
+      <!-- Quick Pitch Input Box -->
+      <div class="glass-panel" style="max-width: 100%; margin-bottom: 2.5rem;">
+        <span class="badge">Inscribe a Suggestion</span>
+        <h3 style="margin-bottom: 1.25rem;">Pitch a New Tome</h3>
+
+        <form id="rec-form" class="reaction-form" style="border: none; padding: 0; margin: 0;">
+          <div class="form-row" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+
+            <div class="form-group">
+              <label for="rec-title">Book Title</label>
+              <input type="text" id="rec-title" class="reaction-select" placeholder="e.g., The Starless Sea" required />
+            </div>
+
+            <div class="form-group">
+              <label for="rec-author">Author</label>
+              <input type="text" id="rec-author" class="reaction-select" placeholder="e.g., Erin Morgenstern" required />
+            </div>
+
+            <div class="form-group">
+              <label for="rec-by">Recommended By</label>
+              <select id="rec-by" class="reaction-select">
+                <option value="Mafer">Mafer</option>
+                <option value="Fer">Fer</option>
+                <option value="Carla">Carla</option>
+              </select>
+            </div>
+
+          </div>
+
+          <!-- Optional Fields Row for Low-Effort Pitches -->
+          <div class="form-row" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-top: 0.5rem;">
+
+            <!-- Cover Image URL with Tooltip -->
+            <div class="form-group">
+              <label for="rec-cover">
+                Cover Image URL <span class="optional-tag">(Optional)</span>
+                <span class="tooltip-container" tabindex="0" aria-label="Instructions for cover image link">
+                  <span class="tooltip-icon">ⓘ</span>
+                  <span class="tooltip-box">
+                    Right-click any book cover online (e.g., Goodreads, Amazon, or Google Images) and select <strong>"Copy Image Address"</strong> or <strong>"Copy Image Link"</strong>.
+                  </span>
+                </span>
+              </label>
+              <input type="url" id="rec-cover" class="reaction-select" placeholder="https://... (or leave blank)" />
+            </div>
+
+            <!-- Total Chapters with Tooltip -->
+            <div class="form-group">
+              <label for="rec-chapters">
+                Total Chapters <span class="optional-tag">(Optional)</span>
+                <span class="tooltip-container" tabindex="0" aria-label="Instructions for total chapters">
+                  <span class="tooltip-icon">ⓘ</span>
+                  <span class="tooltip-box">
+                    Check the Table of Contents in your book, or look up the chapter count on Goodreads or StoryGraph.
+                  </span>
+                </span>
+              </label>
+              <input type="number" id="rec-chapters" class="reaction-select" placeholder="e.g., 30 (or leave blank)" min="1" />
+            </div>
+
+          </div>
+
+          <div class="form-group" style="margin-top: 0.5rem;">
+            <label for="rec-note">Pitch Note / Why read it?</label>
+            <textarea id="rec-note" placeholder="Share why this fits our circle's vibe..." style="min-height: 70px;"></textarea>
+          </div>
+
+          <button type="submit" class="submit-btn" style="align-self: flex-start; margin-top: 0.5rem;">
+            📜 Submit Pitch
+          </button>
+        </form>
+      </div>
+
+      <!-- Pitch List Grid (Populated dynamically via script.js + books.js) -->
+      <div class="recommendations-grid rec-grid" id="rec-grid"></div>
+    </section>
+
+  </main>
+
+  <!-- Footer with Archivist Secret Trigger -->
+  <footer class="sylvan-footer">
+    <p>© Sylvan Library — Inscribed by the Circle</p>
+    <button id="archivist-key-btn" class="archivist-key" onclick="openArchivistModal()" title="Archivist Access">🗝️</button>
+  </footer>
+
+  <!-- Archivist Sanctum Modal -->
+  <div id="archivist-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <button id="close-archivist-modal" class="modal-close" onclick="closeArchivistModal()">&times;</button>
+
+      <div class="modal-header">
+        <span class="rune-icon">✦</span>
+        <h2>Archivist Sanctum</h2>
+        <p>Enter the ancient passkey to cycle the Sylvan Season.</p>
+      </div>
+
+      <!-- Passkey Step -->
+      <div id="archivist-auth-step" class="modal-step">
+        <div class="input-group">
+          <label for="archivist-pin">Sanctum Passkey</label>
+          <input type="password" id="archivist-pin" placeholder="Enter PIN " autocomplete="off">
+        </div>
+        <button id="archivist-unlock-btn" class="sylvan-btn" onclick="unlockArchivistControls()">Unlock Controls</button>
+        <p id="archivist-error" class="error-msg hidden">The passkey is invalid.</p>
+      </div>
+
+      <!-- Control Actions Step -->
+      <div id="archivist-actions-step" class="modal-step hidden">
+        <div class="action-box">
+          <h3>Cycle Sylvan Season</h3>
+          <p>This action will permanently move the active tome to the Archives, promote the top-voted recommendation, and reset local annotations for the new month.</p>
+          <button id="cycle-season-btn" class="sylvan-btn primary-btn">✨ Archive & Promote Top Tome</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+
+  <!-- Firestore Database SDK (Compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="books.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

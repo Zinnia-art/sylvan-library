@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sylvan Library — Archieve</title>
+
+  <!-- 1. Early Connections to Font & CDN Servers -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+
+  <!-- 2. Preload Critical Background & Fog so they load INSTANTLY -->
+  <link rel="preload" href="assets/main_library.webp" as="image">
+  <link rel="preload" href="assets/fog.webp" as="image">
+
+  <!-- 3. Non-blocking Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+
+
+</head>
+<body>
+
+  <header class="nav-bar">
+    <nav class="nav-container" aria-label="Main Navigation">
+
+      <!-- Brand / Logo -->
+      <a href="index.html" class="nav-brand">
+        <img src="assets/logo.png" alt="Sylvan Library Logo" class="nav-logo" />
+      </a>
+
+      <!-- Mobile Hamburger Toggle -->
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle Navigation Menu">
+        <span class="hamburger-bar"></span>
+        <span class="hamburger-bar"></span>
+        <span class="hamburger-bar"></span>
+      </button>
+
+      <!-- Navigation Menu Wrapper -->
+      <div class="nav-menu" id="navMenu">
+        <ul class="nav-links">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="archive.html" class="active">Archives</a></li>
+          <li><a href="recommendations.html">Recommendations</a></li>
+        </ul>
+
+        <!-- CTA Button targeting your #current-read section -->
+        <a href="index.html#current-read" class="btn-nav-cta">Current Book</a>
+      </div>
+
+    </nav>
+  </header>
+
+
+
+  <!-- Update #canvas-container: -->
+  <div id="canvas-container" style="background-image: url('assets/book_shelve.webp');"></div>
+
+  <!-- Environmental Lighting, Fog & Firefly Canvas Overlays -->
+  <div id="particle-canvas"></div>
+  <div id="darkness-overlay"></div>
+  <div id="fog-overlay"></div>
+
+  <!-- Main Scrollable Content -->
+  <main class="scroll-content">
+
+    <!-- Archive Header Section -->
+    <section class="page-header descent-section" style="min-height: 40vh; padding-top: 8rem;">
+      <div class="hero-header">
+        <span class="sub-title">Subterranean Vaults</span>
+        <h1 class="hero-main-title">The Grand Archives</h1>
+        <p class="hero-tagline">A chronicle of every tome our circle has conquered.</p>
+         <p class="hero-tagline">✨ Click any book to reveal stored quotes & member commentary.</p>
+
+      </div>
+    </section>
+
+    <!-- Bookshelf Grid Section -->
+    <section class="section-container" style="max-width: 1100px; margin: 0 auto; padding: 0 1.5rem 4rem;">
+      <div class="bookshelf-grid"></div>
+    </section>
+
+  </main>
+
+  <!-- Footer with Archivist Secret Trigger -->
+  <footer class="sylvan-footer">
+    <p>© Sylvan Library — Subterranean Archive System</p>
+    <button id="archivist-key-btn" class="archivist-key" onclick="openArchivistModal()" title="Archivist Access">🗝️</button>
+  </footer>
+
+  <!-- ==========================================================================
+       1. Book Inscriptions Inspector Modal (On-Demand Quotes & Comments)
+       ========================================================================== -->
+  <div id="archive-modal" class="modal-overlay hidden">
+    <div class="modal-card archive-modal-card">
+      <button id="close-archive-modal" class="modal-close" aria-label="Close modal">&times;</button>
+
+      <div class="modal-header">
+        <span class="rune-icon">📜</span>
+        <h2 id="archive-modal-title">Book Inscriptions</h2>
+        <p>Saved quotes and reflections from this tome.</p>
+      </div>
+
+      <div class="archive-modal-body" style="text-align: left; margin-top: 1.5rem;">
+        <!-- Community Vibes Section -->
+        <div class="archive-block" style="margin-bottom: 1.5rem;">
+          <h3 style="font-size: 1.1rem; color: #e2e8f0; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem; margin-bottom: 0.75rem;">Preserved Vibe Stamps</h3>
+          <div id="archive-vibes-list" class="vibe-stamps" style="display: flex; flex-wrap: wrap; gap: 0.5rem;"></div>
+        </div>
+
+        <!-- Favorite Lines Section -->
+        <div class="archive-block" style="margin-bottom: 1.5rem;">
+          <h3 style="font-size: 1.1rem; color: #e2e8f0; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem; margin-bottom: 0.75rem;">Favorite Lines & Quotes</h3>
+          <ul id="archive-lines-list" class="archive-lines-list" style="list-style: none; padding: 0;"></ul>
+        </div>
+
+        <!-- Reflections / Comments Section -->
+        <div class="archive-block">
+          <h3 style="font-size: 1.1rem; color: #e2e8f0; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem; margin-bottom: 0.75rem;">Reflections & Comments</h3>
+          <div id="archive-comments-list" class="archive-comments-grid"></div>
+        </div>
+      </div> <!-- Closes .archive-modal-body -->
+    </div> <!-- 👈 ADD THIS: Closes .modal-card -->
+  </div> <!-- 👈 ADD THIS: Closes #archive-modal -->
+
+
+  <!-- ==========================================================================
+       2. Archivist Sanctum Modal (Passkey & Season Controls)
+       ========================================================================== -->
+  <div id="archivist-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <button id="close-archivist-modal" class="modal-close" onclick="closeArchivistModal()">&times;</button>
+
+      <div class="modal-header">
+        <span class="rune-icon">✦</span>
+        <h2>Archivist Sanctum</h2>
+        <p>Enter the ancient passkey to cycle the Sylvan Season.</p>
+      </div>
+
+      <!-- Passkey Step -->
+      <div id="archivist-auth-step" class="modal-step">
+        <div class="input-group">
+          <label for="archivist-pin">Sanctum Passkey</label>
+          <input type="password" id="archivist-pin" placeholder="Enter PIN " autocomplete="off">
+        </div>
+        <button id="archivist-unlock-btn" class="sylvan-btn" onclick="unlockArchivistControls()">Unlock Controls</button>
+        <p id="archivist-error" class="error-msg hidden">The passkey is invalid.</p>
+      </div>
+
+      <!-- Control Actions Step -->
+      <div id="archivist-actions-step" class="modal-step hidden">
+        <div class="action-box">
+          <h3>Cycle Sylvan Season</h3>
+          <p>This action will permanently move the active tome to the Archives, promote the top-voted recommendation, and reset local annotations for the new month.</p>
+          <button id="cycle-season-btn" class="sylvan-btn primary-btn">✨ Archive & Promote Top Tome</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase & Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+
+  <!-- Firestore Database SDK (Compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="books.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
