@@ -766,6 +766,8 @@ button, .btn-primary, .btn-secondary { font-family: var(--font-body); border: no
 
 /* Sanctum actions: stack of rites, scrollable on short phone screens */
 #archivist-modal .modal-card { max-height: 90vh; overflow-y: auto; }
+/* Archive inscriptions grow with the Trial, so keep the modal scrollable */
+.archive-modal-card { max-height: 90vh; overflow-y: auto; max-width: 560px; }
 .action-box { text-align: left; padding: 1rem 0; border-top: 1px solid rgba(140, 185, 150, 0.15); }
 .action-box:first-child { border-top: none; padding-top: 0; }
 .action-box h3 { font-family: 'Cinzel', serif; color: #e2f0e7; font-size: 1.05rem; margin-bottom: 0.4rem; }

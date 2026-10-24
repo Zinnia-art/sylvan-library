@@ -1193,6 +1193,43 @@ function fetchArchivedBookNotes(bookId) {
     })
     .catch(err => console.error("Error loading archived vibes:", err));
 
+    // --- Fetch the Trial of the Circle (questions + every sealed answer) ---
+    const trialEl = document.getElementById('archive-trial');
+    if (trialEl) {
+        trialEl.dataset.bookId = rawId;
+        trialEl.innerHTML = '<p class="empty-state">Loading the trial...</p>';
+
+        Promise.all(searchIds.map(id => db.collection('trials').doc(id).get()))
+        .then(async (trialDocs) => {
+            const trialDoc = trialDocs.find(doc => doc.exists && (doc.data().questions || []).length);
+            if (!trialDoc) return null;
+
+            const answersSnap = await trialDoc.ref.collection('answers').get();
+            const answers = {};
+            answersSnap.forEach((doc) => { answers[doc.id] = doc.data().answers || {}; });
+            return { questions: trialDoc.data().questions, answers };
+        })
+        .then((trial) => {
+            // Ignore a slow response if another book was opened meanwhile
+            if (trialEl.dataset.bookId !== rawId) return;
+
+            if (!trial) {
+                trialEl.innerHTML = '<p class="empty-state">No trial was held for this tome.</p>';
+            } else if (!Object.keys(trial.answers).length) {
+                trialEl.innerHTML = '<p class="empty-state">No answers were sealed for this tome.</p>';
+            } else {
+                // The tome is finished, so every sealed answer is shown
+                trialEl.innerHTML = buildTrialResultsHTML(trial.questions, trial.answers);
+            }
+        })
+        .catch((err) => {
+            console.error("Error loading archived trial:", err);
+            if (trialEl.dataset.bookId === rawId) {
+                trialEl.innerHTML = '<p class="empty-state">Error loading the trial.</p>';
+            }
+        });
+    }
+
     // --- B. Fetch Quotes & Comments ---
     db.collection('reactions')
     .where('bookId', 'in', searchIds)
