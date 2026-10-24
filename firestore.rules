@@ -1,0 +1,124 @@
+rules_version = '2';
+
+// ==========================================================================
+//  THE SYLVAN LIBRARY - FIRESTORE SECURITY RULES
+//  Members don't sign in; the Archivist signs in through the Sanctum.
+//  Paste into Firebase console -> Firestore -> Rules (or `firebase deploy`).
+// ==========================================================================
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---- Helpers ----------------------------------------------------------
+
+    // Replace with the Archivist account's UID (Authentication -> Users)
+    function isArchivist() {
+      return request.auth != null && request.auth.uid == 'REPLACE_WITH_ARCHIVIST_UID';
+    }
+
+    function isMember(name) {
+      return name in ['Mafer', 'Fer', 'Carla'];
+    }
+
+    function isText(value, maxLength) {
+      return value is string && value.size() > 0 && value.size() <= maxLength;
+    }
+
+    function vibeKeys() {
+      return ['cozy', 'mindblown', 'twist', 'devastated', 'intense'];
+    }
+
+    // Exactly one vibe goes up by exactly one
+    function isOneVibeStamp(before, after) {
+      let changed = after.diff(before).affectedKeys();
+      let key = changed.toList()[0];
+      return after.keys().hasOnly(vibeKeys())
+        && changed.size() == 1
+        && after[key] == before.get(key, 0) + 1;
+    }
+
+    // ---- Active book & archives (season cycle is Archivist-only) ----------
+
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if isArchivist();
+    }
+
+    match /archives/{archiveId} {
+      allow read: if true;
+      allow write: if isArchivist();
+    }
+
+    // ---- Reading position: any member can tap a milestone -----------------
+
+    match /circleState/activeMilestone {
+      allow read: if true;
+      allow write: if isArchivist()
+        || (request.resource.data.keys().hasOnly(['activeIndex', 'updatedAt'])
+            && request.resource.data.activeIndex is int
+            && request.resource.data.activeIndex >= 0
+            && request.resource.data.activeIndex < 20);
+    }
+
+    // ---- Vibe stamps ------------------------------------------------------
+
+    match /vibes/{bookId} {
+      allow read: if true;
+      allow create: if isArchivist() || isOneVibeStamp({}, request.resource.data);
+      allow update: if isArchivist() || isOneVibeStamp(resource.data, request.resource.data);
+      allow delete: if isArchivist();
+    }
+
+    // ---- Favorite lines & reader notes ------------------------------------
+
+    match /reactions/{reactionId} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasOnly(['bookId', 'type', 'content', 'author', 'createdAt'])
+        && isText(request.resource.data.bookId, 200)
+        && request.resource.data.type in ['line', 'comment']
+        && isText(request.resource.data.content, 2000)
+        && isMember(request.resource.data.author)
+        && request.resource.data.createdAt == request.time;
+      allow update, delete: if isArchivist();
+    }
+
+    // ---- Recommendations: pitch, vote +/-1; the cycle removes the winner ---
+
+    match /recommendations/{recId} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasOnly(['title', 'author', 'suggestedBy', 'cover', 'chapters', 'reason', 'votes', 'createdAt'])
+        && isText(request.resource.data.title, 200)
+        && isText(request.resource.data.author, 200)
+        && isMember(request.resource.data.suggestedBy)
+        && request.resource.data.votes == 0
+        && request.resource.data.createdAt == request.time;
+      allow update: if isArchivist()
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['votes'])
+            && request.resource.data.votes >= 0
+            && (request.resource.data.votes == resource.data.votes + 1
+                || request.resource.data.votes == resource.data.votes - 1));
+      allow delete: if isArchivist();
+    }
+
+    // ---- Trial of the Circle ----------------------------------------------
+
+    match /trials/{bookId} {
+      // Questions and the "Reveal now" switch
+      allow read: if true;
+      allow write: if isArchivist();
+
+      // One sealed answer set per member
+      match /answers/{member} {
+        allow read: if true;
+        allow create, update: if isMember(member)
+          && request.resource.data.keys().hasOnly(['member', 'answers', 'sealedAt'])
+          && request.resource.data.member == member
+          && request.resource.data.answers is map
+          && request.resource.data.answers.size() <= 8
+          && request.resource.data.sealedAt == request.time;
+        allow delete: if isArchivist();
+      }
+    }
+
+    // Everything else stays closed
+  }
+}
