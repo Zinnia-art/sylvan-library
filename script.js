@@ -290,10 +290,13 @@ function initVibeStamps() {
                     countSpan.textContent = `(${count})`;
                 }
 
-                // Restore highlighted state if voted on this browser
-                if (localStorage.getItem(`sylvan_vibe_${CURRENT_BOOK_ID}_${vibeType}`)) {
-                    btn.classList.add('active');
+                // Restore highlighted state if voted on this browser.
+                // A local mark with a zero count means the stamp never reached Firestore: clear it.
+                const localVoteKey = `sylvan_vibe_${CURRENT_BOOK_ID}_${vibeType}`;
+                if (localStorage.getItem(localVoteKey) && count === 0) {
+                    localStorage.removeItem(localVoteKey);
                 }
+                btn.classList.toggle('active', !!localStorage.getItem(localVoteKey));
             });
         }, (error) => console.error("Firestore Vibe Sync Error:", error));
 
@@ -320,6 +323,9 @@ function initVibeStamps() {
 
                 } catch (err) {
                     console.error("Error saving vibe vote:", err);
+                    // Undo the optimistic mark so the stamp can be tried again
+                    btn.classList.remove('active');
+                    localStorage.removeItem(localVoteKey);
                 }
             });
         });
@@ -555,26 +561,20 @@ async function toggleVote(docId, hasVoted) {
     }
 
     const recRef = db.collection('recommendations').doc(docId);
-    let myVotes = JSON.parse(localStorage.getItem('sylvan_my_votes')) || [];
+    const previousVotes = JSON.parse(localStorage.getItem('sylvan_my_votes')) || [];
+    const otherVotes = previousVotes.filter(id => id !== docId);
+
+    // Record the vote locally BEFORE writing: the snapshot re-renders the cards
+    // as soon as the write starts, and must already show "Voted" / "Vote".
+    localStorage.setItem('sylvan_my_votes', JSON.stringify(hasVoted ? otherVotes : [...otherVotes, docId]));
 
     try {
-        if (hasVoted) {
-            // Unvote: Decrement Firestore count by 1 & update local storage
-            await recRef.update({
-                votes: firebase.firestore.FieldValue.increment(-1)
-            });
-            myVotes = myVotes.filter(id => id !== docId);
-        } else {
-            // Vote: Increment Firestore count by 1 & update local storage
-            await recRef.update({
-                votes: firebase.firestore.FieldValue.increment(1)
-            });
-            myVotes.push(docId);
-        }
-
-        localStorage.setItem('sylvan_my_votes', JSON.stringify(myVotes));
+        await recRef.update({
+            votes: firebase.firestore.FieldValue.increment(hasVoted ? -1 : 1)
+        });
     } catch (err) {
         console.error("Error toggling vote in Firestore:", err);
+        localStorage.setItem('sylvan_my_votes', JSON.stringify(previousVotes));
     }
 }
 
