@@ -204,6 +204,22 @@
       </div>
     </section>
 
+    <!-- Section 4: Trial of the Circle (questionnaire for the whole tome) -->
+    <section id="trial" class="descent-section">
+      <div class="glass-panel">
+        <span class="badge">Circle Gathering</span>
+        <h2>⚖️ Trial of the Circle</h2>
+        <p class="section-desc" style="font-size: 0.85rem; opacity: 0.8; margin-bottom: 1.5rem;">
+          A short questionnaire about the whole tome, answered together when the circle gathers.
+        </p>
+
+        <!-- Questions & answers render here via JS -->
+        <div id="trial-body">
+          <p class="empty-state">The Archivist has not yet forged this tome's trial.</p>
+        </div>
+      </div>
+    </section>
+
   </main>
 
   <!-- Footer with Archivist Secret Trigger -->
@@ -240,6 +256,14 @@
           <p>This action will permanently move the active tome to the Archives, promote the top-voted recommendation, and reset local annotations for the new month.</p>
           <button id="cycle-season-btn" class="sylvan-btn primary-btn">✨ Archive & Promote Top Tome</button>
         </div>
+
+        <div class="action-box">
+          <h3>Forge the Trial</h3>
+          <p>Write the questions the circle will answer together when you gather for this tome.</p>
+          <a href="index.html#trial" class="sylvan-btn forge-trial-btn">⚖️ Forge the Trial</a>
+        </div>
+
+        <button type="button" class="sanctum-lock-btn" onclick="lockArchivistControls()">🔒 Lock Sanctum</button>
       </div>
     </div>
   </div>

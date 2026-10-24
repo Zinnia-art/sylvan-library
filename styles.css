@@ -764,6 +764,26 @@ button, .btn-primary, .btn-secondary { font-family: var(--font-body); border: no
 .sylvan-btn:hover { background: rgba(45, 90, 62, 0.9); border-color: #70d695; box-shadow: 0 0 15px rgba(112, 214, 149, 0.3); }
 .error-msg { color: #f87171; font-size: 0.85rem; margin-top: 0.8rem; }
 
+/* Sanctum actions: stack of rites, scrollable on short phone screens */
+#archivist-modal .modal-card { max-height: 90vh; overflow-y: auto; }
+.action-box { text-align: left; padding: 1rem 0; border-top: 1px solid rgba(140, 185, 150, 0.15); }
+.action-box:first-child { border-top: none; padding-top: 0; }
+.action-box h3 { font-family: 'Cinzel', serif; color: #e2f0e7; font-size: 1.05rem; margin-bottom: 0.4rem; }
+.action-box p { font-size: 0.85rem; color: #a0b5a6; line-height: 1.4; margin-bottom: 0.9rem; }
+a.sylvan-btn { display: block; text-align: center; text-decoration: none; box-sizing: border-box; }
+
+.sanctum-lock-btn {
+  margin-top: 0.5rem;
+  background: none;
+  border: none;
+  color: #8aa090;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0.6rem;
+  min-height: 44px;
+}
+.sanctum-lock-btn:hover { color: #f3d068; }
+
 /* ==========================================================================
  *  1. BASE STYLES & LAYOUTS (Default / Desktop)
  *  ========================================================================== */

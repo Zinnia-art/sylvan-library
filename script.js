@@ -828,21 +828,46 @@ function renderMilestones() {
  *  ========================================================================== */
 
 const ARCHIVIST_PASSKEY = "1234";
+const ARCHIVIST_SESSION_KEY = 'sylvan_archivist_unlocked';
+
+// Archivist access lasts until the browser tab is closed (sessionStorage)
+function isArchivistUnlocked() {
+    try {
+        return sessionStorage.getItem(ARCHIVIST_SESSION_KEY) === 'true';
+    } catch (e) {
+        return document.body.classList.contains('archivist-mode');
+    }
+}
+
+function setArchivistMode(unlocked) {
+    try {
+        if (unlocked) sessionStorage.setItem(ARCHIVIST_SESSION_KEY, 'true');
+        else sessionStorage.removeItem(ARCHIVIST_SESSION_KEY);
+    } catch (e) { /* private mode: keep it for this page only */ }
+
+    // Archivist-only controls key off this class; listeners can react to the event
+    document.body.classList.toggle('archivist-mode', unlocked);
+    document.dispatchEvent(new CustomEvent('archivist-change', { detail: { unlocked } }));
+}
+
+function showArchivistStep(unlocked) {
+    const authStep = document.getElementById('archivist-auth-step');
+    const actionsStep = document.getElementById('archivist-actions-step');
+    if (authStep) authStep.classList.toggle('hidden', unlocked);
+    if (actionsStep) actionsStep.classList.toggle('hidden', !unlocked);
+}
 
 window.openArchivistModal = function() {
     const modal = document.getElementById('archivist-modal');
     const pinInput = document.getElementById('archivist-pin');
     const errorMsg = document.getElementById('archivist-error');
-    const authStep = document.getElementById('archivist-auth-step');
-    const actionsStep = document.getElementById('archivist-actions-step');
 
     if (!modal) return;
 
     modal.classList.remove('hidden');
     if (pinInput) pinInput.value = '';
     if (errorMsg) errorMsg.classList.add('hidden');
-    if (authStep) authStep.classList.remove('hidden');
-    if (actionsStep) actionsStep.classList.add('hidden');
+    showArchivistStep(isArchivistUnlocked());
 };
 
 window.closeArchivistModal = function() {
@@ -853,19 +878,41 @@ window.closeArchivistModal = function() {
 window.unlockArchivistControls = function() {
     const pinInput = document.getElementById('archivist-pin');
     const errorMsg = document.getElementById('archivist-error');
-    const authStep = document.getElementById('archivist-auth-step');
-    const actionsStep = document.getElementById('archivist-actions-step');
 
     if (pinInput && pinInput.value === ARCHIVIST_PASSKEY) {
-        if (authStep) authStep.classList.add('hidden');
-        if (actionsStep) actionsStep.classList.remove('hidden');
+        setArchivistMode(true);
+        showArchivistStep(true);
         if (errorMsg) errorMsg.classList.add('hidden');
     } else {
         if (errorMsg) errorMsg.classList.remove('hidden');
     }
 };
 
+window.lockArchivistControls = function() {
+    setArchivistMode(false);
+    showArchivistStep(false);
+};
+
 function initArchivistEvents() {
+    // Restore Archivist mode for this browser session
+    if (isArchivistUnlocked()) document.body.classList.add('archivist-mode');
+
+    // Enter key unlocks (phone keyboards show "Go")
+    const pinInput = document.getElementById('archivist-pin');
+    if (pinInput) {
+        pinInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                window.unlockArchivistControls();
+            }
+        });
+    }
+
+    // Forge the Trial: close the Sanctum before jumping to the Trial section
+    document.querySelectorAll('.forge-trial-btn').forEach((link) => {
+        link.addEventListener('click', () => window.closeArchivistModal());
+    });
+
     const cycleBtn = document.getElementById('cycle-season-btn');
     if (cycleBtn) {
         cycleBtn.addEventListener('click', () => {
