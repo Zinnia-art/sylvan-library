@@ -373,12 +373,16 @@ function initVibeStamps() {
             if (linesList) linesList.innerHTML = '';
             if (commentsList) commentsList.innerHTML = '';
 
+            let linesCount = 0;
+            let commentsCount = 0;
+
             snapshot.forEach((doc) => {
                 const data = doc.data();
                 const authorName = escapeHTML(data.author || 'Anonymous');
                 const contentText = escapeHTML(data.content || '');
 
                 if ((data.type === 'line' || data.type === 'quote') && linesList) {
+                    linesCount++;
                     const li = document.createElement('li');
                     li.innerHTML = `
                     <span>"${contentText}"</span>
@@ -386,6 +390,7 @@ function initVibeStamps() {
                     `;
                     linesList.appendChild(li);
                 } else if ((data.type === 'comment' || data.type === 'reflection') && commentsList) {
+                    commentsCount++;
                     const card = document.createElement('div');
                     card.className = 'comment-card';
                     card.innerHTML = `
@@ -398,6 +403,14 @@ function initVibeStamps() {
                     commentsList.appendChild(card);
                 }
             });
+
+            // Empty states when the tome has no inscriptions yet
+            if (linesList && linesCount === 0) {
+                linesList.innerHTML = '<li class="empty-state">No favorite lines inscribed yet. Leave the first mark below.</li>';
+            }
+            if (commentsList && commentsCount === 0) {
+                commentsList.innerHTML = '<p class="empty-state">No reader notes yet. Share your thoughts below.</p>';
+            }
         }, (error) => console.error("Error reading reactions snapshot:", error));
     }
 }
