@@ -831,24 +831,16 @@ function renderMilestones() {
  *  ARCHIVIST SANCTUM (GLOBAL FUNCTIONS)
  *  ========================================================================== */
 
-const ARCHIVIST_PASSKEY = "1234";
-const ARCHIVIST_SESSION_KEY = 'sylvan_archivist_unlocked';
+// The Sanctum passkey is the password of this single Firebase Auth account.
+// Firestore rules (firestore.rules) only let this account write Archivist data.
+const ARCHIVIST_EMAIL = 'archivist@sylvan-library.app';
+const auth = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth() : null;
 
-// Archivist access lasts until the browser tab is closed (sessionStorage)
 function isArchivistUnlocked() {
-    try {
-        return sessionStorage.getItem(ARCHIVIST_SESSION_KEY) === 'true';
-    } catch (e) {
-        return document.body.classList.contains('archivist-mode');
-    }
+    return !!(auth && auth.currentUser && auth.currentUser.email === ARCHIVIST_EMAIL);
 }
 
 function setArchivistMode(unlocked) {
-    try {
-        if (unlocked) sessionStorage.setItem(ARCHIVIST_SESSION_KEY, 'true');
-        else sessionStorage.removeItem(ARCHIVIST_SESSION_KEY);
-    } catch (e) { /* private mode: keep it for this page only */ }
-
     // Archivist-only controls key off this class; listeners can react to the event
     document.body.classList.toggle('archivist-mode', unlocked);
     document.dispatchEvent(new CustomEvent('archivist-change', { detail: { unlocked } }));
@@ -879,27 +871,63 @@ window.closeArchivistModal = function() {
     if (modal) modal.classList.add('hidden');
 };
 
-window.unlockArchivistControls = function() {
+window.unlockArchivistControls = async function() {
     const pinInput = document.getElementById('archivist-pin');
     const errorMsg = document.getElementById('archivist-error');
+    const unlockBtn = document.getElementById('archivist-unlock-btn');
 
-    if (pinInput && pinInput.value === ARCHIVIST_PASSKEY) {
-        setArchivistMode(true);
-        showArchivistStep(true);
+    const showError = (text) => {
+        if (!errorMsg) return;
+        errorMsg.textContent = text;
+        errorMsg.classList.remove('hidden');
+    };
+
+    if (!auth) {
+        showError('The Sanctum could not be reached. Reload the page and try again.');
+        return;
+    }
+    if (!pinInput || !pinInput.value) {
+        showError('The passkey is invalid.');
+        return;
+    }
+
+    if (unlockBtn) unlockBtn.disabled = true;
+    try {
+        // Session persistence: unlocked until the browser tab is closed
+        await auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
+        await auth.signInWithEmailAndPassword(ARCHIVIST_EMAIL, pinInput.value);
+        pinInput.value = '';
         if (errorMsg) errorMsg.classList.add('hidden');
-    } else {
-        if (errorMsg) errorMsg.classList.remove('hidden');
+        showArchivistStep(true);
+    } catch (err) {
+        const wrongPasskey = ['auth/invalid-credential', 'auth/invalid-login-credentials', 'auth/wrong-password', 'auth/user-not-found', 'auth/invalid-email'];
+        if (wrongPasskey.includes(err.code)) {
+            showError('The passkey is invalid.');
+        } else if (err.code === 'auth/too-many-requests') {
+            showError('Too many attempts. Wait a moment and try again.');
+        } else {
+            console.error("Archivist sign-in failed:", err);
+            showError('The Sanctum could not be reached. Try again.');
+        }
+    } finally {
+        if (unlockBtn) unlockBtn.disabled = false;
     }
 };
 
-window.lockArchivistControls = function() {
-    setArchivistMode(false);
+window.lockArchivistControls = async function() {
+    try {
+        if (auth) await auth.signOut();
+    } catch (err) {
+        console.error("Archivist sign-out failed:", err);
+    }
     showArchivistStep(false);
 };
 
 function initArchivistEvents() {
-    // Restore Archivist mode for this browser session
-    if (isArchivistUnlocked()) document.body.classList.add('archivist-mode');
+    // Archivist mode follows the Firebase sign-in state (restored on reload)
+    if (auth) {
+        auth.onAuthStateChanged(() => setArchivistMode(isArchivistUnlocked()));
+    }
 
     // Enter key unlocks (phone keyboards show "Go")
     const pinInput = document.getElementById('archivist-pin');

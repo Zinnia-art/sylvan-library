@@ -153,7 +153,7 @@
       <div id="archivist-auth-step" class="modal-step">
         <div class="input-group">
           <label for="archivist-pin">Sanctum Passkey</label>
-          <input type="password" id="archivist-pin" placeholder="Enter PIN " autocomplete="off">
+          <input type="password" id="archivist-pin" placeholder="Enter passkey" autocomplete="off">
         </div>
         <button id="archivist-unlock-btn" class="sylvan-btn" onclick="unlockArchivistControls()">Unlock Controls</button>
         <p id="archivist-error" class="error-msg hidden">The passkey is invalid.</p>
@@ -183,6 +183,9 @@
 
   <!-- Firestore Database SDK (Compat) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <!-- Firebase Auth SDK (Compat) for the Archivist sign-in -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <script src="books.js"></script>
   <script src="script.js"></script>
 </body>
