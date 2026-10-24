@@ -429,6 +429,22 @@ function toTitleCase(str) {
 }
 
 /* --------------------------------------------------------------------------
+ *  Helper: Recommendation Ranking (shared by the page and the season cycle)
+ *  Primary: highest votes. Tie-breaker: earliest pitch.
+ *  Pitches without a timestamp (books.js fallbacks) lose ties.
+ *  -------------------------------------------------------------------------- */
+function compareRecommendations(a, b) {
+    const votesA = a.votes || 0;
+    const votesB = b.votes || 0;
+    if (votesB !== votesA) return votesB - votesA;
+
+    const timeA = a.createdAt?.seconds ?? Infinity;
+    const timeB = b.createdAt?.seconds ?? Infinity;
+    if (timeA === timeB) return 0;
+    return timeA < timeB ? -1 : 1;
+}
+
+/* --------------------------------------------------------------------------
  *  4. Recommendations & Pitch Form Submission (Firestore Integrated)
  *  -------------------------------------------------------------------------- */
 function initRecommendations() {
@@ -491,24 +507,7 @@ function initRecommendations() {
             recsList.push({ id: doc.id, ...doc.data() });
         });
 
-        // =========================================================================
-        // OPTION A SORT: Primary (Highest Votes) -> Secondary (Earliest Pitch)
-        // =========================================================================
-        recsList.sort((a, b) => {
-            const votesA = a.votes || 0;
-            const votesB = b.votes || 0;
-
-            // 1. Primary: Sort by highest votes
-            if (votesB !== votesA) {
-                return votesB - votesA;
-            }
-
-            // 2. Secondary (Tie-Breaker): Earliest submission date wins
-            const timeA = a.createdAt?.seconds ? a.createdAt.seconds : 0;
-            const timeB = b.createdAt?.seconds ? b.createdAt.seconds : 0;
-
-            return timeA - timeB; // Ascending order (older submission comes first)
-        });
+        recsList.sort(compareRecommendations);
 
         // Render sorted recommendation cards
         recsList.forEach((rec) => {
@@ -870,7 +869,7 @@ function initArchivistEvents() {
     const cycleBtn = document.getElementById('cycle-season-btn');
     if (cycleBtn) {
         cycleBtn.addEventListener('click', () => {
-            if (confirm("Are you sure you want to complete the current season? This will move the active tome to the Archives and promote the top recommendation.")) {
+            if (confirm("Are you sure you want to complete the current season? This will move the active tome to the Archives.\n\n📚 The next tome will be the most-voted book in Recommendations (ties go to the earliest pitch).")) {
                 cycleToNextBook();
             }
         });
@@ -937,8 +936,8 @@ async function cycleToNextBook() {
             return;
         }
 
-        // 5. Sort by Firestore live vote counts (highest votes first)
-        availableRecs.sort((a, b) => (b.votes || 0) - (a.votes || 0));
+        // 5. Same ranking as the Recommendations page (votes, then earliest pitch)
+        availableRecs.sort(compareRecommendations);
 
         const winner = availableRecs[0];
 

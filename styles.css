@@ -481,6 +481,16 @@ will-change: transform;
 .comment-header .author { color: #f3d068; font-weight: 500; }
 .comment-body { margin: 0; line-height: 1.4; }
 
+/* Reminder of how the next tome is chosen */
+.next-tome-note {
+  font-size: 0.85rem;
+  color: #8fa893;
+  margin: 0 0 1.25rem;
+  line-height: 1.4;
+}
+.next-tome-note a { color: #f3d068; text-decoration: underline; text-underline-offset: 2px; }
+.hero-header .next-tome-note { margin: 0.75rem auto 0; max-width: 32rem; }
+
 /* Empty states for lists with no inscriptions yet */
 .empty-state,
 .lines-list li.empty-state {
