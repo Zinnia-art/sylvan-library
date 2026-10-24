@@ -27,13 +27,21 @@ service cloud.firestore {
       return ['cozy', 'mindblown', 'twist', 'devastated', 'intense'];
     }
 
+    // A vibe count either stays the same or goes up by one
+    function isVibeStep(before, after, key) {
+      return after.get(key, 0) == before.get(key, 0)
+        || after.get(key, 0) == before.get(key, 0) + 1;
+    }
+
     // Exactly one vibe goes up by exactly one
     function isOneVibeStamp(before, after) {
-      let changed = after.diff(before).affectedKeys();
-      let key = changed.toList()[0];
       return after.keys().hasOnly(vibeKeys())
-        && changed.size() == 1
-        && after[key] == before.get(key, 0) + 1;
+        && after.diff(before).affectedKeys().size() == 1
+        && isVibeStep(before, after, 'cozy')
+        && isVibeStep(before, after, 'mindblown')
+        && isVibeStep(before, after, 'twist')
+        && isVibeStep(before, after, 'devastated')
+        && isVibeStep(before, after, 'intense');
     }
 
     // ---- Active book & archives (season cycle is Archivist-only) ----------
