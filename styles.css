@@ -784,6 +784,66 @@ a.sylvan-btn { display: block; text-align: center; text-decoration: none; box-si
 }
 .sanctum-lock-btn:hover { color: #f3d068; }
 
+/* --------------------------------------------------------------------------
+ *  Trial of the Circle
+ *  -------------------------------------------------------------------------- */
+.trial-question-list {
+  list-style: none;
+  counter-reset: trial;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 0 0 1.25rem;
+  padding: 0;
+}
+.trial-question-list li {
+  counter-increment: trial;
+  background: rgba(10, 19, 12, 0.6);
+  border: 1px solid rgba(194, 214, 198, 0.1);
+  border-radius: 8px;
+  padding: 0.8rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.trial-q-text::before { content: counter(trial) ". "; color: #f3d068; }
+.trial-q-text { color: #e5f0e7; }
+.trial-q-meta { font-size: 0.8rem; color: #8fa893; }
+
+.trial-editor { border-top: none; padding-top: 0; margin-top: 0; }
+.trial-editor-hint { font-size: 0.85rem; color: #8fa893; line-height: 1.4; margin: 0; }
+.trial-edit-card {
+  border: 1px solid rgba(194, 214, 198, 0.15);
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: rgba(10, 19, 12, 0.4);
+}
+.trial-edit-card legend { font-family: 'Cinzel', serif; color: #f3d068; padding: 0 0.4rem; font-size: 0.9rem; }
+/* 16px inputs stop phones from zooming in on focus */
+.trial-editor textarea,
+.trial-editor .reaction-select { font-size: 1rem; width: 100%; box-sizing: border-box; }
+.trial-editor textarea { resize: vertical; min-height: 0; }
+
+.trial-remove-btn,
+.trial-add-btn {
+  min-height: 44px;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.trial-remove-btn { align-self: flex-end; background: none; border: none; color: #e09a9a; padding: 0.4rem 0.6rem; }
+.trial-add-btn { background: none; border: 1px dashed rgba(243, 208, 104, 0.5); color: #f3d068; padding: 0.6rem; }
+.trial-remove-btn:disabled,
+.trial-add-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.trial-editor-actions { display: flex; flex-direction: column; align-items: stretch; gap: 0.25rem; }
+.trial-editor-actions .submit-btn { min-height: 44px; }
+
 /* ==========================================================================
  *  1. BASE STYLES & LAYOUTS (Default / Desktop)
  *  ========================================================================== */

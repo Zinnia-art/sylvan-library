@@ -33,6 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderMilestones();
     initArchivistEvents();
     initArchiveModal();
+    initTrial();
     initNavToggle();
 });
 
@@ -742,6 +743,9 @@ function initCurrentBook() {
         if (typeof initVibeStamps === 'function') {
             initVibeStamps();
         }
+
+        // Point the Trial of the Circle at the active book
+        initTrial();
     }
 
     // 1. Instant paint from local cache if available
@@ -1248,6 +1252,205 @@ function fetchArchivedBookNotes(bookId) {
 }
 
 
+
+/* ==========================================================================
+ *  TRIAL OF THE CIRCLE (Questionnaire per tome, Firestore: trials/{bookId})
+ *  ========================================================================== */
+const TRIAL_MAX_QUESTIONS = 8;
+
+const DEFAULT_TRIAL_QUESTIONS = [
+    { id: 'rating', type: 'choice', text: 'Overall rating', options: ['🌙', '🌙🌙', '🌙🌙🌙', '🌙🌙🌙🌙', '🌙🌙🌙🌙🌙'] },
+    { id: 'ending', type: 'choice', text: 'Did the ending satisfy you?', options: ['Yes', 'Partly', 'No'] },
+    { id: 'recommend', type: 'choice', text: 'Would you recommend it?', options: ['Yes', 'Maybe', 'No'] },
+    { id: 'pace', type: 'choice', text: 'Pace of the book', options: ['Too slow', 'Just right', 'Too fast'] },
+    { id: 'summary', type: 'text', text: 'One word or line that sums up the book', options: [] }
+];
+
+const trialState = { bookId: null, unsubscribe: null, questions: [], editing: false, draft: [] };
+
+function initTrial() {
+    const trialBody = document.getElementById('trial-body');
+    if (!trialBody || !db) return;
+
+    // React to the Archivist locking/unlocking (bound once)
+    if (!trialBody.dataset.bound) {
+        trialBody.dataset.bound = 'true';
+        document.addEventListener('archivist-change', (e) => {
+            if (!e.detail.unlocked) trialState.editing = false;
+            renderTrial();
+        });
+    }
+
+    // Re-subscribe only when the active book changes
+    const bookId = document.body.dataset.bookId;
+    if (!bookId || bookId === 'active-read' || bookId === trialState.bookId) return;
+
+    if (trialState.unsubscribe) trialState.unsubscribe();
+    trialState.bookId = bookId;
+    trialState.editing = false;
+
+    trialState.unsubscribe = db.collection('trials').doc(bookId).onSnapshot((doc) => {
+        trialState.questions = doc.exists ? (doc.data().questions || []) : [];
+        if (!trialState.editing) renderTrial();
+    }, (err) => console.error("Error syncing trial:", err));
+}
+
+function renderTrial() {
+    const trialBody = document.getElementById('trial-body');
+    if (!trialBody) return;
+
+    const isArchivist = document.body.classList.contains('archivist-mode');
+    if (trialState.editing && isArchivist) {
+        renderTrialEditor(trialBody);
+        return;
+    }
+
+    const questions = trialState.questions;
+    let html = '';
+
+    if (!questions.length) {
+        html = `<p class="empty-state">The Archivist has not yet forged this tome's trial.</p>`;
+    } else {
+        html = `<ol class="trial-question-list">${questions.map((q) => `
+            <li>
+            <span class="trial-q-text">${escapeHTML(q.text)}</span>
+            <span class="trial-q-meta">${q.type === 'choice' ? escapeHTML((q.options || []).join(' · ')) : 'Short answer'}</span>
+            </li>`).join('')}
+        </ol>`;
+    }
+
+    if (isArchivist) {
+        html += `<button type="button" class="sylvan-btn trial-edit-btn">${questions.length ? '✎ Edit the Trial' : '⚖️ Forge the Trial'}</button>`;
+    }
+
+    trialBody.innerHTML = html;
+
+    trialBody.querySelector('.trial-edit-btn')?.addEventListener('click', () => {
+        // Start from the saved questions, or the default set for a new tome
+        const source = questions.length ? questions : DEFAULT_TRIAL_QUESTIONS;
+        trialState.draft = source.map((q) => ({
+            id: q.id,
+            type: q.type,
+            text: q.text || '',
+            optionsText: (q.options || []).join('\n')
+        }));
+        trialState.editing = true;
+        renderTrial();
+    });
+}
+
+function renderTrialEditor(trialBody) {
+    const draft = trialState.draft;
+
+    trialBody.innerHTML = `
+    <form class="reaction-form trial-editor" novalidate>
+    <p class="trial-editor-hint">Tap-to-choose questions need at least two options, one per line.</p>
+    ${draft.map((q, i) => `
+        <fieldset class="trial-edit-card" data-index="${i}">
+        <legend>Question ${i + 1}</legend>
+        <div class="form-group">
+        <label for="trial-q-${i}">Question</label>
+        <textarea id="trial-q-${i}" data-field="text" rows="2" placeholder="e.g. What does the color red symbolize?">${escapeHTML(q.text)}</textarea>
+        </div>
+        <div class="form-group">
+        <label for="trial-type-${i}">Answer type</label>
+        <select id="trial-type-${i}" class="reaction-select" data-field="type">
+        <option value="choice" ${q.type === 'choice' ? 'selected' : ''}>Tap to choose</option>
+        <option value="text" ${q.type === 'text' ? 'selected' : ''}>Short answer</option>
+        </select>
+        </div>
+        <div class="form-group trial-options-group ${q.type === 'choice' ? '' : 'hidden'}">
+        <label for="trial-opts-${i}">Options (one per line)</label>
+        <textarea id="trial-opts-${i}" data-field="optionsText" rows="${Math.max(3, q.optionsText.split('\n').length)}" placeholder="Yes&#10;No">${escapeHTML(q.optionsText)}</textarea>
+        </div>
+        <button type="button" class="trial-remove-btn" data-action="remove" ${draft.length <= 1 ? 'disabled' : ''}>✕ Remove question</button>
+        </fieldset>`).join('')}
+    <button type="button" class="trial-add-btn" data-action="add" ${draft.length >= TRIAL_MAX_QUESTIONS ? 'disabled' : ''}>+ Add question (${draft.length}/${TRIAL_MAX_QUESTIONS})</button>
+    <p class="error-msg trial-editor-error hidden"></p>
+    <div class="trial-editor-actions">
+    <button type="submit" class="submit-btn">📜 Seal the Trial</button>
+    <button type="button" class="sanctum-lock-btn" data-action="cancel">Cancel</button>
+    </div>
+    </form>`;
+
+    const form = trialBody.querySelector('.trial-editor');
+    const errorEl = form.querySelector('.trial-editor-error');
+
+    // Keep the draft in sync with every keystroke so add/remove re-renders keep values
+    form.addEventListener('input', (e) => {
+        const card = e.target.closest('.trial-edit-card');
+        const field = e.target.dataset.field;
+        if (!card || !field) return;
+        const q = draft[Number(card.dataset.index)];
+        q[field] = e.target.value;
+
+        if (field === 'type') {
+            card.querySelector('.trial-options-group').classList.toggle('hidden', q.type !== 'choice');
+        }
+    });
+
+    form.addEventListener('click', (e) => {
+        const action = e.target.dataset.action;
+        if (!action) return;
+
+        if (action === 'add' && draft.length < TRIAL_MAX_QUESTIONS) {
+            draft.push({ id: `q${Date.now().toString(36)}`, type: 'choice', text: '', optionsText: '' });
+            renderTrialEditor(trialBody);
+            trialBody.querySelector(`#trial-q-${draft.length - 1}`)?.focus();
+        } else if (action === 'remove' && draft.length > 1) {
+            draft.splice(Number(e.target.closest('.trial-edit-card').dataset.index), 1);
+            renderTrialEditor(trialBody);
+        } else if (action === 'cancel') {
+            trialState.editing = false;
+            renderTrial();
+        }
+    });
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const questions = draft.map((q) => ({
+            id: q.id,
+            type: q.type,
+            text: q.text.trim(),
+            options: q.type === 'choice'
+            ? q.optionsText.split('\n').map((opt) => opt.trim()).filter(Boolean)
+            : []
+        }));
+
+        const problem = questions.findIndex((q) => !q.text || (q.type === 'choice' && q.options.length < 2));
+        if (problem !== -1) {
+            const q = questions[problem];
+            errorEl.textContent = !q.text
+            ? `Question ${problem + 1} needs some text.`
+            : `Question ${problem + 1} needs at least two options.`;
+            errorEl.classList.remove('hidden');
+            return;
+        }
+
+        const submitBtn = form.querySelector('[type="submit"]');
+        submitBtn.disabled = true;
+
+        try {
+            // merge keeps other trial fields (e.g. reveal state) untouched
+            await db.collection('trials').doc(trialState.bookId).set({
+                bookId: trialState.bookId,
+                bookTitle: document.querySelector('.tome-title')?.textContent.trim() || '',
+                questions: questions,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+
+            trialState.questions = questions;
+            trialState.editing = false;
+            renderTrial();
+        } catch (err) {
+            console.error("Error sealing trial:", err);
+            errorEl.textContent = 'The trial could not be sealed. Check the browser console for details.';
+            errorEl.classList.remove('hidden');
+            submitBtn.disabled = false;
+        }
+    });
+}
 
 function initNavToggle() {
     const navToggle = document.getElementById('navToggle');
