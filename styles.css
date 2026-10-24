@@ -787,28 +787,67 @@ a.sylvan-btn { display: block; text-align: center; text-decoration: none; box-si
 /* --------------------------------------------------------------------------
  *  Trial of the Circle
  *  -------------------------------------------------------------------------- */
-.trial-question-list {
-  list-style: none;
-  counter-reset: trial;
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  margin: 0 0 1.25rem;
-  padding: 0;
+.trial-tracker { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+.trial-member {
+  font-size: 0.85rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid rgba(194, 214, 198, 0.2);
+  color: #8fa893;
 }
-.trial-question-list li {
-  counter-increment: trial;
+.trial-member.sealed { border-color: rgba(243, 208, 104, 0.6); color: #f3d068; }
+.trial-status { font-size: 0.9rem; font-style: italic; color: #8fa893; margin: 0 0 1.25rem; }
+
+.trial-picker-label { font-size: 0.85rem; color: #8fa893; margin: 1.25rem 0 0.5rem; }
+.trial-name-picker { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 1rem; }
+.trial-name-btn {
+  min-height: 48px;
+  background: rgba(10, 19, 12, 0.7);
+  border: 1px solid rgba(243, 208, 104, 0.4);
+  color: #e5f0e7;
+  border-radius: 8px;
+  font-family: 'Cinzel', serif;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+.trial-name-btn:hover { border-color: #f3d068; color: #f3d068; }
+.trial-archivist-btn { margin-top: 0.5rem; }
+
+.trial-results { display: flex; flex-direction: column; gap: 0.6rem; }
+.trial-result-card {
   background: rgba(10, 19, 12, 0.6);
   border: 1px solid rgba(194, 214, 198, 0.1);
   border-radius: 8px;
   padding: 0.8rem 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
 }
-.trial-q-text::before { content: counter(trial) ". "; color: #f3d068; }
-.trial-q-text { color: #e5f0e7; }
-.trial-q-meta { font-size: 0.8rem; color: #8fa893; }
+.trial-result-q { color: #e5f0e7; margin: 0 0 0.5rem; }
+.trial-result-answers { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; }
+.trial-result-answers li { display: flex; gap: 0.75rem; font-size: 0.9rem; }
+.trial-result-member { color: #f3d068; min-width: 3.5rem; flex-shrink: 0; }
+.trial-result-value { color: #d8e6db; overflow-wrap: anywhere; }
+
+.trial-answer-form { border-top: none; padding-top: 0; margin-top: 0; }
+.trial-answering-as { margin: 0; color: #8fa893; font-size: 0.9rem; }
+.trial-answering-as strong { color: #f3d068; font-family: 'Cinzel', serif; }
+.trial-answer-card { border: none; margin: 0; padding: 0; }
+.trial-answer-card legend { color: #e5f0e7; margin-bottom: 0.6rem; padding: 0; line-height: 1.4; }
+.trial-choices { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.trial-choice { position: relative; cursor: pointer; }
+.trial-choice input { position: absolute; opacity: 0; pointer-events: none; }
+.trial-choice span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0.4rem 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(194, 214, 198, 0.25);
+  background: rgba(10, 19, 12, 0.7);
+  color: #d8e6db;
+  font-size: 0.95rem;
+}
+.trial-choice input:checked + span { border-color: #f3d068; background: rgba(243, 208, 104, 0.15); color: #f3d068; }
+.trial-choice input:focus-visible + span { outline: 2px solid #f3d068; outline-offset: 2px; }
+.trial-text-answer { width: 100%; box-sizing: border-box; font-size: 1rem; }
 
 .trial-editor { border-top: none; padding-top: 0; margin-top: 0; }
 .trial-editor-hint { font-size: 0.85rem; color: #8fa893; line-height: 1.4; margin: 0; }

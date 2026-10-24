@@ -1266,19 +1266,44 @@ const DEFAULT_TRIAL_QUESTIONS = [
     { id: 'summary', type: 'text', text: 'One word or line that sums up the book', options: [] }
 ];
 
-const trialState = { bookId: null, unsubscribe: null, questions: [], editing: false, draft: [] };
+const CIRCLE_MEMBERS = ['Mafer', 'Fer', 'Carla'];
+
+const trialState = {
+    bookId: null,
+    unsubscribe: null,
+    questions: [],
+    answers: {},        // { memberName: { questionId: answer } }
+    revealed: false,    // Archivist's "Reveal now" before all three seal
+    editing: false,
+    draft: [],
+    answering: null     // member currently filling the form
+};
+
+function trialRef() {
+    return db.collection('trials').doc(trialState.bookId);
+}
+
+function sealedMembers() {
+    return CIRCLE_MEMBERS.filter((member) => trialState.answers[member]);
+}
+
+// Don't wipe a form someone is typing into when another member seals
+function refreshTrial() {
+    if (!trialState.editing && !trialState.answering) renderTrial();
+}
 
 function initTrial() {
     const trialBody = document.getElementById('trial-body');
     if (!trialBody || !db) return;
 
-    // React to the Archivist locking/unlocking (bound once)
+    // Bound once: Archivist lock/unlock + buttons in the main Trial view
     if (!trialBody.dataset.bound) {
         trialBody.dataset.bound = 'true';
         document.addEventListener('archivist-change', (e) => {
             if (!e.detail.unlocked) trialState.editing = false;
             renderTrial();
         });
+        trialBody.addEventListener('click', handleTrialAction);
     }
 
     // Re-subscribe only when the active book changes
@@ -1286,13 +1311,23 @@ function initTrial() {
     if (!bookId || bookId === 'active-read' || bookId === trialState.bookId) return;
 
     if (trialState.unsubscribe) trialState.unsubscribe();
-    trialState.bookId = bookId;
-    trialState.editing = false;
+    Object.assign(trialState, { bookId, questions: [], answers: {}, revealed: false, editing: false, answering: null });
 
-    trialState.unsubscribe = db.collection('trials').doc(bookId).onSnapshot((doc) => {
-        trialState.questions = doc.exists ? (doc.data().questions || []) : [];
-        if (!trialState.editing) renderTrial();
+    const unsubTrial = trialRef().onSnapshot((doc) => {
+        const data = doc.exists ? doc.data() : {};
+        trialState.questions = data.questions || [];
+        trialState.revealed = !!data.revealed;
+        refreshTrial();
     }, (err) => console.error("Error syncing trial:", err));
+
+    const unsubAnswers = trialRef().collection('answers').onSnapshot((snapshot) => {
+        const answers = {};
+        snapshot.forEach((doc) => { answers[doc.id] = doc.data().answers || {}; });
+        trialState.answers = answers;
+        refreshTrial();
+    }, (err) => console.error("Error syncing trial answers:", err));
+
+    trialState.unsubscribe = () => { unsubTrial(); unsubAnswers(); };
 }
 
 function renderTrial() {
@@ -1304,6 +1339,10 @@ function renderTrial() {
         renderTrialEditor(trialBody);
         return;
     }
+    if (trialState.answering) {
+        renderTrialAnswerForm(trialBody);
+        return;
+    }
 
     const questions = trialState.questions;
     let html = '';
@@ -1311,23 +1350,63 @@ function renderTrial() {
     if (!questions.length) {
         html = `<p class="empty-state">The Archivist has not yet forged this tome's trial.</p>`;
     } else {
-        html = `<ol class="trial-question-list">${questions.map((q) => `
-            <li>
-            <span class="trial-q-text">${escapeHTML(q.text)}</span>
-            <span class="trial-q-meta">${q.type === 'choice' ? escapeHTML((q.options || []).join(' · ')) : 'Short answer'}</span>
-            </li>`).join('')}
-        </ol>`;
+        const sealed = sealedMembers();
+        const showResults = sealed.length === CIRCLE_MEMBERS.length || trialState.revealed;
+
+        html += `<div class="trial-tracker">${CIRCLE_MEMBERS.map((member) => `
+            <span class="trial-member ${sealed.includes(member) ? 'sealed' : ''}">${member} ${sealed.includes(member) ? '✓' : '…'}</span>`).join('')}
+        </div>`;
+
+        html += showResults
+        ? buildTrialResultsHTML(questions, trialState.answers)
+        : `<p class="trial-status">Answers appear once all three have sealed.</p>`;
+
+        html += `
+        <p class="trial-picker-label">${showResults ? 'Change your answers' : 'Who is answering?'}</p>
+        <div class="trial-name-picker">${CIRCLE_MEMBERS.map((member) => `
+            <button type="button" class="trial-name-btn" data-trial-action="answer" data-member="${member}">${member}</button>`).join('')}
+        </div>`;
+
+        if (isArchivist && !showResults) {
+            html += `<button type="button" class="sylvan-btn trial-archivist-btn" data-trial-action="reveal">👁️ Reveal now</button>`;
+        } else if (isArchivist && trialState.revealed && sealed.length < CIRCLE_MEMBERS.length) {
+            html += `<button type="button" class="sanctum-lock-btn" data-trial-action="hide">Hide answers until all three seal</button>`;
+        }
     }
 
     if (isArchivist) {
-        html += `<button type="button" class="sylvan-btn trial-edit-btn">${questions.length ? '✎ Edit the Trial' : '⚖️ Forge the Trial'}</button>`;
+        html += `<button type="button" class="sylvan-btn trial-archivist-btn" data-trial-action="edit">${questions.length ? '✎ Edit the Trial' : '⚖️ Forge the Trial'}</button>`;
     }
 
     trialBody.innerHTML = html;
+}
 
-    trialBody.querySelector('.trial-edit-btn')?.addEventListener('click', () => {
+// One answer card per question, listing each member who sealed (shared with the Archive)
+function buildTrialResultsHTML(questions, answersByMember) {
+    const members = CIRCLE_MEMBERS.filter((member) => answersByMember[member]);
+
+    return `<div class="trial-results">${questions.map((q, i) => `
+        <div class="trial-result-card">
+        <p class="trial-result-q">${i + 1}. ${escapeHTML(q.text)}</p>
+        <ul class="trial-result-answers">${members.map((member) => `
+            <li><span class="trial-result-member">${member}</span><span class="trial-result-value">${escapeHTML(answersByMember[member][q.id] || '—')}</span></li>`).join('')}
+        </ul>
+        </div>`).join('')}
+    </div>`;
+}
+
+async function handleTrialAction(e) {
+    const btn = e.target.closest('[data-trial-action]');
+    if (!btn) return;
+    const action = btn.dataset.trialAction;
+
+    if (action === 'answer') {
+        trialState.answering = btn.dataset.member;
+        renderTrial();
+        document.getElementById('trial')?.scrollIntoView({ behavior: 'smooth' });
+    } else if (action === 'edit') {
         // Start from the saved questions, or the default set for a new tome
-        const source = questions.length ? questions : DEFAULT_TRIAL_QUESTIONS;
+        const source = trialState.questions.length ? trialState.questions : DEFAULT_TRIAL_QUESTIONS;
         trialState.draft = source.map((q) => ({
             id: q.id,
             type: q.type,
@@ -1336,6 +1415,91 @@ function renderTrial() {
         }));
         trialState.editing = true;
         renderTrial();
+    } else if (action === 'reveal' || action === 'hide') {
+        const revealed = action === 'reveal';
+        if (revealed && !confirm("Reveal everyone's answers now, before all three have sealed?")) return;
+        try {
+            await trialRef().set({ revealed }, { merge: true });
+            trialState.revealed = revealed;
+            renderTrial();
+        } catch (err) {
+            console.error("Error changing trial reveal:", err);
+        }
+    }
+}
+
+function renderTrialAnswerForm(trialBody) {
+    const member = trialState.answering;
+    const previous = trialState.answers[member] || {};
+
+    trialBody.innerHTML = `
+    <form class="reaction-form trial-answer-form" novalidate>
+    <p class="trial-answering-as">Answering as <strong>${member}</strong></p>
+    ${trialState.questions.map((q, i) => `
+        <fieldset class="trial-answer-card">
+        <legend>${i + 1}. ${escapeHTML(q.text)}</legend>
+        ${q.type === 'choice'
+        ? `<div class="trial-choices">${(q.options || []).map((opt) => `
+            <label class="trial-choice">
+            <input type="radio" name="ans-${q.id}" value="${escapeHTML(opt)}" ${previous[q.id] === opt ? 'checked' : ''}>
+            <span>${escapeHTML(opt)}</span>
+            </label>`).join('')}
+        </div>`
+        : `<input type="text" class="reaction-select trial-text-answer" name="ans-${q.id}" maxlength="200" placeholder="Your answer" value="${escapeHTML(previous[q.id] || '')}">`}
+        </fieldset>`).join('')}
+    <p class="error-msg trial-answer-error hidden"></p>
+    <div class="trial-editor-actions">
+    <button type="submit" class="submit-btn">🔏 Seal my answers</button>
+    <button type="button" class="sanctum-lock-btn" data-answer-action="back">Back</button>
+    </div>
+    </form>`;
+
+    const form = trialBody.querySelector('.trial-answer-form');
+    const errorEl = form.querySelector('.trial-answer-error');
+
+    form.querySelector('[data-answer-action="back"]').addEventListener('click', () => {
+        trialState.answering = null;
+        renderTrial();
+    });
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const answers = {};
+        const missing = trialState.questions.findIndex((q) => {
+            const value = q.type === 'choice'
+            ? form.querySelector(`input[name="ans-${q.id}"]:checked`)?.value
+            : form.querySelector(`input[name="ans-${q.id}"]`)?.value.trim();
+            if (value) answers[q.id] = value;
+            return !value;
+        });
+
+        if (missing !== -1) {
+            errorEl.textContent = `Answer question ${missing + 1} before sealing.`;
+            errorEl.classList.remove('hidden');
+            return;
+        }
+
+        const submitBtn = form.querySelector('[type="submit"]');
+        submitBtn.disabled = true;
+
+        try {
+            await trialRef().collection('answers').doc(member).set({
+                member: member,
+                answers: answers,
+                sealedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            trialState.answers = { ...trialState.answers, [member]: answers };
+            trialState.answering = null;
+            renderTrial();
+            document.getElementById('trial')?.scrollIntoView({ behavior: 'smooth' });
+        } catch (err) {
+            console.error("Error sealing answers:", err);
+            errorEl.textContent = 'Your answers could not be sealed. Check the browser console for details.';
+            errorEl.classList.remove('hidden');
+            submitBtn.disabled = false;
+        }
     });
 }
 
