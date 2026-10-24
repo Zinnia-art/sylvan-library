@@ -10,9 +10,9 @@ service cloud.firestore {
 
     // ---- Helpers ----------------------------------------------------------
 
-    // Replace with the Archivist account's UID (Authentication -> Users)
+    // The Archivist account's UID (Firebase console -> Authentication -> Users)
     function isArchivist() {
-      return request.auth != null && request.auth.uid == 'REPLACE_WITH_ARCHIVIST_UID';
+      return request.auth != null && request.auth.uid == 'V1QKoaGMfbM9AXyGGmC2STTtU4p2';
     }
 
     function isMember(name) {
